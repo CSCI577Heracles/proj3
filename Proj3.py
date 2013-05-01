@@ -4,7 +4,7 @@ import numpy
 # Create mesh and define function space
 nx = 100
 mesh = UnitInterval(nx)
-V = FunctionSpace(mesh, 'Lagrange', 1)
+V = FunctionSpace(mesh, 'CG', 1)
 
 # All constants are in SI units
 zs = 1500 							# surface elevation (m)
@@ -26,11 +26,10 @@ K = k/(rho*Cp)
 # horizontal ice velocity
 u = Expression('(20 - 100*pow('+sigma+', 4))/spy', spy=spy)
 
-w = Expression('-0.3*'+sigma+'/spy', spy=spy) 		# -0.1 to -0.5
+w = Expression(('-0.3*'+sigma+'/spy',), spy=spy) 		# -0.1 to -0.5
 
 phi = Expression('-rho*g*(zs - x[0])', rho=rho, g=g, zs=zs)
 
-# Define boundary conditions
 Ts = Expression('-10+5*sin(2*pi*(t/spy))', pi=3.14159, spy=spy, t=0)
 
 g = Expression('(1-'+sigma+')*Qgeo/rho/Cp', rho=rho, Cp=Cp, Qgeo=Qgeo)
@@ -44,23 +43,24 @@ boundary = Boundary()
 bc = DirichletBC(V, Ts, boundary)
 
 # Initial condition
-u_1 = interpolate(Ts, V)
+T0 = interpolate(Ts, V)
 #u_1 = project(u0, V)  # will not result in exact solution!
 
-dt = 0.3      # time step
+dt = 0.1*spy      # time step
 
 # Define variational problem
 T = TrialFunction(V)
 v = TestFunction(V)
-a = -K * v * dt*inner(nabla_grad(T), nabla_grad(v))*dx
-L = g * v * ds + (phi/rho/Cp - u*dTdx)*v*dx
+a = (T * v + K * v * dt*dot(nabla_grad(T), nabla_grad(v)))*dx 
+#a = (T * v + K * v * dt*dot(nabla_grad(T), nabla_grad(v)) + dot(w, nabla_grad(T))*v*dt)*dx
+L = (phi/rho/Cp * dt - u*dTdx * dt + T0)*v*dx + g * dt * v * ds
 
 A = assemble(a)   # assemble only once, before the time stepping
 b = None          # necessary for memory saving assemeble call
 
 # Compute solution
 T = Function(V)   # the unknown at a new time level
-totalTime = 1.9           # total simulation time
+totalTime = 1.9 * spy       # total simulation time
 t = dt
 while t <= totalTime:
     print 'time =', t
@@ -68,6 +68,8 @@ while t <= totalTime:
     Ts.t = t
     bc.apply(A, b)
     solve(A, T.vector(), b)
+    
+    plot(T.vector())
 
     # Verify
     u_e = interpolate(Ts, V)
