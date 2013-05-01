@@ -25,11 +25,11 @@ print sigma
 K = k/(rho*Cp)
 
 # horizontal ice velocity
-u = Expression('(20 - 100*pow('+sigma+', 4))/spy', spy=spy)
+u = Expression('(0*pow('+sigma+', 4))/spy', spy=spy)
 
-w = Expression(('-0.3*'+sigma+'/spy',), spy=spy) 		# -0.1 to -0.5
+w = Expression(('-0.0*'+sigma+'/spy',), spy=spy) 		# -0.1 to -0.5
 
-phi = Expression('-rho*g*(zs - x[0])', rho=rho, g=g, zs=zs)
+phi = Expression('0*-rho*g*(zs - x[0])', rho=rho, g=g, zs=zs)
 
 Ts = Expression('-10+5*sin(2*pi*(t/spy))', pi=3.14159, spy=spy, t=0)
 
@@ -73,6 +73,7 @@ while t <= totalTime:
 
     #pylab.plot(T.vector().array())
     plot(T)
+    print T.vector().array()
     out_file << (T, t)
     # Verify
     u_e = interpolate(Ts, V)
