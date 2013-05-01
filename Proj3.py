@@ -1,5 +1,6 @@
 from dolfin import *
 import numpy
+#import pylab
 
 # Create mesh and define function space
 nx = 100
@@ -51,7 +52,7 @@ dt = 0.1*spy      # time step
 # Define variational problem
 T = TrialFunction(V)
 v = TestFunction(V)
-a = (T * v + K * v * dt*dot(nabla_grad(T), nabla_grad(v)))*dx 
+a = (T * v + K * dt*dot(nabla_grad(T), nabla_grad(v)))*dx
 #a = (T * v + K * v * dt*dot(nabla_grad(T), nabla_grad(v)) + dot(w, nabla_grad(T))*v*dt)*dx
 L = (phi/rho/Cp * dt - u*dTdx * dt + T0)*v*dx + g * dt * v * ds
 
@@ -60,21 +61,23 @@ b = None          # necessary for memory saving assemeble call
 
 # Compute solution
 T = Function(V)   # the unknown at a new time level
-totalTime = 1.9 * spy       # total simulation time
+totalTime = 100. * spy       # total simulation time
 t = dt
+out_file = File("results/temp.pvd")
 while t <= totalTime:
-    print 'time =', t
+    print 'time =', t/spy
     b = assemble(L, tensor=b)
     Ts.t = t
     bc.apply(A, b)
     solve(A, T.vector(), b)
-    
-    plot(T.vector())
 
+    #pylab.plot(T.vector().array())
+    plot(T)
+    out_file << (T, t)
     # Verify
     u_e = interpolate(Ts, V)
     maxdiff = numpy.abs(u_e.vector().array() - T.vector().array()).max()
     print 'Max error, t=%.2f: %-10.3f' % (t, maxdiff)
 
     t += dt
-    u_1.assign(T)
+    T0.assign(T)
