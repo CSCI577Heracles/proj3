@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 # import matplotlib.pyplot as pl
 
 spy = 31557600.0  # sec/year = 60*60*24*365.25
-dt = 1e1 * spy
+dt = 1e2 * spy
 total_sim_time = 1e3*dt#1e-2 * spy
 ice_thickness = 1500.0
 temperature_0 = -10.0
@@ -54,6 +54,22 @@ def prints(strName, t):
     plt.savefig(strName)
     return
     
+# inputs: 
+#       x:  The array of nodes of the mesh, e.g. x = mesh.coordinates()[:]
+#       nx: Number of nodes in the mesh
+#       ps: Percentage of nodes to place at the surface, value on the interval [0., 1.]
+#       pb: Percentage of nodes to place at the base, value on the interval [0., 1.]
+#       ds: Distance from the surface to place the ps nodes, value on the interval [0., s-b]
+#       db: Distance from the bed to place the pb nodes, value on the interval [0., s-b]
+#
+# Example:
+#       Suppose we have 100 nodes, and our ice sheet is 1000m tall.
+#       We wish to have 40 nodes in the top ds = 200m, and 30 nodes in the bottom db = 300m.
+#       ps = 40 / 100 = 0.4
+#       pb = 30 / 100 = 0.3
+#       These parameters will set 40 nodes in a linspace between the surface and 200m below the 
+#       surface, 30 nodes in a linspace between the base and 300m above the base, and places
+#       the remaining 30 nodes in the space between.
 def denser(x, nx, ps = 0.4, pb = 0.1, ds = 150, db = 200):
     b = x[0]
     s = x[-1]
@@ -170,7 +186,7 @@ while True:
     solve(A, theta.vector(), b)
     
     temp = theta.vector().array()
-    temp[temp > theta_pmp] = theta_pmp
+    temp[temp > theta_pmp] = theta_pmp[temp > theta_pmp]
     theta.vector()[:] = temp
 
     #print '\n----------------------------------------'
@@ -178,15 +194,15 @@ while True:
     #print '----------------------------------------\n'
     #print 'z_coords: ', z_coords
     #print 'theta: ', theta.vector().array()
-    #plt.cla()
-    #plt.xlim((-15, 5))
-    #plt.ylim((z_b, z_s))
-    #plt.plot(theta.vector().array(), z_bar)
-    #plt.title('Temperature Distribution After %d Years' % (t/spy))
-    #plt.plot(theta_pmp, z_bar, color = 'red')
+    plt.cla()
+    plt.xlim((-15, 5))
+    plt.ylim((z_b, z_s))
+    plt.plot(theta.vector().array(), z_bar)
+    plt.title('Temperature Distribution After %d Years' % (t/spy))
+    plt.plot(theta_pmp, z_bar, color = 'red')
     #plt.grid(which = 'major', axis = 'both')
     #plt.legend(loc = 0)
-    #plt.draw()
+    plt.draw()
     # plot(theta)  # transpose of the plot we want
     #out_file << (theta, t, )
 
@@ -202,7 +218,7 @@ while True:
     
     # TODO: part 1
     #for i in range(theta.vector().array()[cDepth:].size):
-    #    if minTemp[i] > theta.vector().array()[cDepth + i]:
+    #   if minTemp[i] > theta.vector().array()[cDepth + i]:
     #        minTemp[i] = theta.vector().array()[cDepth + i]
     #    if maxTemp[i] < theta.vector().array()[cDepth + i]:
     #        maxTemp[i] = theta.vector().array()[cDepth + i]
@@ -210,47 +226,47 @@ while True:
     # TODO: part 2
     err = max(abs((theta_prev - theta.vector().array())/theta.vector().array()))
     print 'err = ', err
-    if state == 1:
-        plt.clf()
-        plt.xlim((-15, 5))
-        plt.ylim((z_b, z_s))
-        plt.plot(theta.vector().array(), z_bar, color = 'blue', label = 'Ice Column Temperature')
-        plt.plot(theta_pmp, z_bar, color = 'red', label = 'Pressure Melting Point')
-        plt.xlabel('Temperature (C)')
-        plt.ylabel('Distance (m)')
-        plt.title('Temperature Distribution After %d Years' % (t/spy))
-        plt.legend(loc = 3)
-        plt.savefig('TempGWInit2.png')
-        state = 2
+    #if state == 1:
+    #    plt.clf()
+    #    plt.xlim((-15, 5))
+    #    plt.ylim((z_b, z_s))
+    #    plt.plot(theta.vector().array(), z_bar, color = 'blue', label = 'Ice Column Temperature')
+    #    plt.plot(theta_pmp, z_bar, color = 'red', label = 'Pressure Melting Point')
+    #    plt.xlabel('Temperature (C)')
+    #    plt.ylabel('Distance (m)')
+    #    plt.title('Temperature Distribution After %d Years' % (t/spy))
+    #    plt.legend(loc = 3)
+    #    plt.savefig('TempGWInit2.png')
+    #    state = 2
         
     if err < 0.001:
-        plt.clf()
-        plt.xlim((-15, 5))
-        plt.ylim((z_b, z_s))
-        plt.plot(theta.vector().array(), z_bar, color = 'blue', label = 'Ice Column Temperature')
-        plt.plot(theta_pmp, z_bar, color = 'red', label = 'Pressure Melting Point')
-        plt.xlabel('Temperature (C)')
-        plt.ylabel('Distance (m)')
-        plt.title('Temperature Distribution After %d Years' % (t/spy))
-        plt.legend(loc = 3)
-        plt.savefig('TempStable2.png')
+    #    plt.clf()
+    #    plt.xlim((-15, 5))
+    #    plt.ylim((z_b, z_s))
+    #    plt.plot(theta.vector().array(), z_bar, color = 'blue', label = 'Ice Column Temperature')
+    #    plt.plot(theta_pmp, z_bar, color = 'red', label = 'Pressure Melting Point')
+    #    plt.xlabel('Temperature (C)')
+    #    plt.ylabel('Distance (m)')
+    #    plt.title('Temperature Distribution After %d Years' % (t/spy))
+    #    plt.legend(loc = 3)
+    #    plt.savefig('TempStable2.png')
         theta_0 = Constant(0.)
         dirichlet_bc = DirichletBC(func_space, theta_0, boundary)
-        state = 1
+    #    state = 1
         
-    if theta.vector().array()[0] == theta_pmp[0]:
-        plt.clf()
-        plt.xlim((-15, 5))
-        plt.ylim((z_b, z_s))
-        plt.plot(theta.vector().array(), z_bar, color = 'blue', label = 'Ice Column Temperature')
-        plt.plot(theta_pmp, z_bar, color = 'red', label = 'Pressure Melting Point')
-        plt.xlabel('Temperature (C)')
-        plt.ylabel('Distance (m)')
-        plt.title('Temperature Distribution After %d Years' % (t/spy))
-        plt.legend(loc = 3)
-        plt.savefig('TempGWFin2.png')
-        state = 3
-        break
+    #if theta.vector().array()[0] == theta_pmp[0]:
+    #    plt.clf()
+    #    plt.xlim((-15, 5))
+    #    plt.ylim((z_b, z_s))
+    #    plt.plot(theta.vector().array(), z_bar, color = 'blue', label = 'Ice Column Temperature')
+    #    plt.plot(theta_pmp, z_bar, color = 'red', label = 'Pressure Melting Point')
+    #    plt.xlabel('Temperature (C)')
+    #    plt.ylabel('Distance (m)')
+    #    plt.title('Temperature Distribution After %d Years' % (t/spy))
+    #    plt.legend(loc = 3)
+    #    plt.savefig('TempGWFin2.png')
+    #    state = 3
+    #    break
     
     t += dt
     theta_1.assign(theta)
